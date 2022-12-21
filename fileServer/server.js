@@ -69,14 +69,15 @@ app.post(
       const response = await uploadToGoogleDrive(req.file, auth);
       deleteFile(req.file.path);
       console.log("response", response);
-      res.status(200).json({ response });
-      setTimeout(() => {
-        axios.patch(
+
+      setTimeout(async () => {
+        await axios.patch(
           `http://95.163.234.208:3500/tasks/${Number(req.body.data) + 1}`,
           {
             documentId: response.data.id,
           }
         );
+        res.status(200).json({ response });
       }, "3000");
     } catch (err) {
       console.log(err);
