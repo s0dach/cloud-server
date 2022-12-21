@@ -1,32 +1,91 @@
 const express = require("express");
-const multer = require("multer");
+const Multer = require("multer");
 const cors = require("cors");
+const { google } = require("googleapis");
+const fs = require("fs");
+const { default: axios } = require("axios");
 
 const app = express();
 
 app.use(cors());
 app.use(express.static("public"));
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "public");
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + file.originalname);
+const multer = Multer({
+  storage: Multer.diskStorage({
+    destination: function (req, file, callback) {
+      callback(null, `public`);
+    },
+    filename: function (req, file, callback) {
+      callback(
+        null,
+        file.fieldname + "_" + Date.now() + "_" + file.originalname
+      );
+    },
+  }),
+  limits: {
+    fileSize: 5 * 1024 * 1024,
   },
 });
 
-const upload = multer({ storage }).single("file");
-
-app.post("/upload", (req, res) => {
-  upload(req, res, (err) => {
-    if (err) {
-      console.log(err);
-      return res.status(500).json(err);
-    }
-    return res.status(200).send(req.file);
+const authenticateGoogle = () => {
+  const auth = new google.auth.GoogleAuth({
+    keyFile: `/projects/telegramDima/fileServer/service-account-key-file.json`,
+    scopes: "https://www.googleapis.com/auth/drive",
   });
-});
+  return auth;
+};
+
+const uploadToGoogleDrive = async (file, auth) => {
+  const fileMetadata = {
+    name: file.originalname,
+    parents: ["1BYMxhXslZOHNxtzgjid9N6ELlWdYSDIm"],
+  };
+
+  const media = {
+    mimeType: file.mimetype,
+    body: fs.createReadStream(file.path),
+  };
+
+  const driveService = google.drive({ version: "v3", auth });
+
+  const response = await driveService.files.create({
+    requestBody: fileMetadata,
+    media: media,
+    fields: "id",
+  });
+  return response;
+};
+
+app.post(
+  "/upload-file-to-google-drive",
+  multer.single("file"),
+  async (req, res, next) => {
+    try {
+      if (!req.file) {
+        res.status(400).send("No file uploaded.");
+        return;
+      }
+      const auth = authenticateGoogle();
+      const response = await uploadToGoogleDrive(req.file, auth);
+      deleteFile(req.file.path);
+      res.status(200).json({ response });
+      axios.patch(
+        `http://95.163.234.208:3500/tasks/${Number(req.body.data) + 1}`,
+        {
+          documentId: response.data.id,
+        }
+      );
+    } catch (err) {
+      console.log(err);
+    }
+  }
+);
+
+const deleteFile = (filePath) => {
+  fs.unlink(filePath, () => {
+    console.log("file deleted");
+  });
+};
 
 app.listen(8000, () => {
   console.log("server start, port 8000");
