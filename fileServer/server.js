@@ -29,7 +29,7 @@ const multer = Multer({
 
 const authenticateGoogle = () => {
   const auth = new google.auth.GoogleAuth({
-    keyFile: `/projects/telegramDima/fileServer/service-account-key-file.json`,
+    keyFile: "service-account-key-file.json",
     scopes: "https://www.googleapis.com/auth/drive",
   });
   return auth;
