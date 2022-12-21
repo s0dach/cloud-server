@@ -27,7 +27,7 @@ const multer = Multer({
   },
 });
 
-const authenticateGoogle = () => {
+const authenticateGoogle = async () => {
   const auth = new google.auth.GoogleAuth({
     keyFile: "service-account-key-file.json",
     scopes: "https://www.googleapis.com/auth/drive",
@@ -65,11 +65,14 @@ app.post(
         res.status(400).send("No file uploaded.");
         return;
       }
-      const auth = authenticateGoogle();
+      const auth = await authenticateGoogle();
       const response = await uploadToGoogleDrive(req.file, auth);
       deleteFile(req.file.path);
+      console.log("response");
+      console.log("auth", auth);
       res.status(200).json({ response });
-      axios.patch(
+
+      await axios.patch(
         `http://95.163.234.208:3500/tasks/${Number(req.body.data) + 1}`,
         {
           documentId: response.data.id,
