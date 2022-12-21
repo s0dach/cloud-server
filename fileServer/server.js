@@ -68,8 +68,7 @@ app.post(
       const auth = await authenticateGoogle();
       const response = await uploadToGoogleDrive(req.file, auth);
       deleteFile(req.file.path);
-      console.log("response");
-      console.log("auth", auth);
+      console.log("response", response);
       res.status(200).json({ response });
 
       await axios.patch(
