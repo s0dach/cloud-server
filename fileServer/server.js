@@ -70,15 +70,17 @@ app.post(
       deleteFile(req.file.path);
       console.log("response", response);
 
-      setTimeout(async () => {
-        await axios.patch(
-          `http://95.163.234.208:3500/tasks/${Number(req.body.data) + 1}`,
+      setTimeout(() => {
+        console.log(req.body);
+        axios.patch(
+          `http://95.163.234.208:3500/tasks/${Number(req.body.data)}`,
           {
             documentId: response.data.id,
           }
         );
-        res.status(200).json({ response });
       }, "3000");
+
+      res.status(200).json({ response });
     } catch (err) {
       console.log(err);
     }
