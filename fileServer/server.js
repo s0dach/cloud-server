@@ -71,14 +71,15 @@ app.post(
       console.log("response", response);
 
       setTimeout(() => {
-        console.log(req.body);
         axios.patch(
-          `http://95.163.234.208:3500/tasks/${Number(req.body.data)}`,
+          `http://95.163.234.208:7000/api/lection/updatematerial/${req.body.data}`,
           {
             documentId: response.data.id,
+            _id: req.body.data,
           }
         );
       }, "3000");
+      console.log(response);
 
       res.status(200).json({ response });
     } catch (err) {
